@@ -1,0 +1,30 @@
+{
+  "name": "pr-phantom",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:client": "vite",
+    "dev:server": "tsx watch server/index.ts",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "tsc && vite build",
+    "start": "node dist-server/server/index.js",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/genai": "^1.5.0",
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "~5.7.2",
+    "vite": "^6.3.5"
+  }
+}

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PR Phantom — A beginner-friendly tool that explains code diffs in plain language with interactive review toolkits and Halloween aesthetics." />
+  <title>PR Phantom 👻 — Diff Explainer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>" />
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+
+  <!-- Interactive ambient particle canvas -->
+  <canvas id="ambient-canvas" class="ambient-canvas" aria-hidden="true"></canvas>
+
+  <!-- Starfield background decoration -->
+  <div class="stars" aria-hidden="true"></div>
+
+  <!-- Interactive Hanging Spider -->
+  <div id="spider-mount" class="spider-mount"></div>
+
+  <div class="app-layout">
+
+    <!-- ── Left Sidebar (Explorer & Diff Library) ── -->
+    <aside id="sidebar-left" class="app-sidebar sidebar-left" aria-label="Diff Library & Files Explorer">
+      <div class="sidebar-header">
+        <div class="sidebar-header__title">
+          <span class="sidebar-icon">📁</span>
+          <span>Diff Explorer</span>
+        </div>
+        <button id="close-left-sidebar-btn" class="sidebar-close-btn" type="button" title="Collapse Explorer" aria-label="Collapse Explorer">✕</button>
+      </div>
+
+      <div class="sidebar-scrollable">
+        <!-- Section: Presets Library -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span>🎃 Sample Diff Library</span>
+            <span class="sidebar-badge" id="preset-count-badge">4</span>
+          </div>
+          <div id="diff-presets-list" class="diff-presets-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Section: Changed Files Mini-Map -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span>📂 Changed Files</span>
+            <span class="sidebar-badge" id="sidebar-files-count">0</span>
+          </div>
+          <div class="sidebar-search-wrap">
+            <input id="sidebar-files-filter" class="sidebar-search-input" type="text" placeholder="Filter files…" aria-label="Filter changed files">
+          </div>
+          <div id="sidebar-files-list" class="sidebar-files-list">
+            <p class="sidebar-empty">No diff loaded yet</p>
+          </div>
+        </div>
+
+        <!-- Section: Recent History -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span>⏳ Recent Diffs</span>
+            <button id="clear-history-btn" class="sidebar-text-btn" type="button">Clear</button>
+          </div>
+          <div id="sidebar-history-list" class="sidebar-history-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Center Main Application ── -->
+    <main class="page-wrapper app-center">
+
+      <!-- ── Top Atmospheric Controls Toolbar ── -->
+      <div class="fx-toolbar" role="region" aria-label="Halloween atmospheric controls">
+        <div class="fx-toolbar__left">
+          <button id="toggle-left-sidebar-btn" class="fx-btn fx-btn--toggle fx-btn--active" type="button" aria-pressed="true" title="Toggle Explorer sidebar">
+            <span class="fx-btn__icon">📁</span>
+            <span class="fx-btn__label">Explorer</span>
+          </button>
+          <span class="spooky-tag">🎃 All Hallows' PR Review</span>
+        </div>
+        <div class="fx-toolbar__actions">
+          <button id="toggle-sound-btn" class="fx-btn fx-btn--active" type="button" aria-pressed="true" title="Toggle eerie sounds">
+            <span class="fx-btn__icon">🔊</span>
+            <span class="fx-btn__label">Sounds: ON</span>
+          </button>
+          <button id="toggle-particles-btn" class="fx-btn fx-btn--active" type="button" aria-pressed="true" title="Toggle floating magic wisps">
+            <span class="fx-btn__icon">✨</span>
+            <span class="fx-btn__label">Wisps: ON</span>
+          </button>
+          <button id="summon-bats-btn" class="fx-btn fx-btn--bat" type="button" title="Release a swarm of bats!">
+            <span class="fx-btn__icon">🦇</span>
+            <span class="fx-btn__label">Summon Bats</span>
+          </button>
+          <button id="toggle-right-sidebar-btn" class="fx-btn fx-btn--toggle fx-btn--active" type="button" aria-pressed="true" title="Toggle Review Toolkit sidebar">
+            <span class="fx-btn__icon">🛠️</span>
+            <span class="fx-btn__label">Toolkit</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Header ── -->
+      <header class="site-header" role="banner">
+        <span class="ghost-deco ghost-deco--left" aria-hidden="true" title="Boooo! 👻">👻</span>
+        <span class="ghost-deco ghost-deco--right" aria-hidden="true" title="Boooo! 👻">👻</span>
+        <span class="ghost-deco ghost-deco--top" aria-hidden="true">🕷️</span>
+        <span class="bat-deco bat-deco--1" aria-hidden="true">🦇</span>
+        <span class="bat-deco bat-deco--2" aria-hidden="true">🦇</span>
+
+        <!-- Interactive Mascot: Phantom Bob -->
+        <div id="mascot-mount" class="mascot-mount"></div>
+
+        <!-- Interactive Moon -->
+        <div class="moon-wrap" title="Click the moon to release a swarm of bats! 🌕🦇">
+          <div id="header-moon" class="header-moon" role="button" tabindex="0" aria-label="Interactive Moon — Click to summon bats!"></div>
+          <span class="moon-hint">Click the moon! 🦇</span>
+        </div>
+
+        <h1 class="site-title">PR Phantom</h1>
+        <p class="site-tagline">Follow the Patch Trail · Understand your code diff · Ask the right review questions</p>
+      </header>
+
+      <!-- ── AI Status Banner ── -->
+      <div id="ollama-status-banner" class="ollama-status-banner" role="status" aria-live="polite">
+        <div class="ollama-status-left">
+          <span class="ollama-dot" id="ollama-dot"></span>
+          <span id="ollama-status-text">Checking AI connection…</span>
+        </div>
+        <div id="ollama-badge-container">
+          <span class="ollama-badge" id="ollama-model-badge">AI</span>
+        </div>
+      </div>
+
+      <!-- ── Input Panel ── -->
+      <section class="input-panel" aria-label="Diff input">
+        <div class="input-panel__header">
+          <h2 class="input-panel__title">📋 Paste your diff</h2>
+          <div class="input-actions">
+            <button id="sample-btn" class="btn btn--sample" type="button">
+              🎃 Load sample diff
+            </button>
+            <button id="clear-btn" class="btn btn--ghost" type="button">
+              ✕ Clear
+            </button>
+          </div>
+        </div>
+
+        <textarea
+          id="diff-input"
+          class="diff-textarea"
+          aria-label="Paste your unified diff here"
+          placeholder="Paste a git diff here…&#10;&#10;Example:&#10;diff --git a/src/app.ts b/src/app.ts&#10;--- a/src/app.ts&#10;+++ b/src/app.ts&#10;@@ -1,4 +1,5 @@&#10; import express from 'express';&#10;+import cors from 'cors';"
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+        <div class="char-counter"><span id="char-count">0</span> characters</div>
+
+        <div id="status-bar" class="status-bar" role="alert" aria-live="polite"></div>
+
+        <button id="explain-btn" class="btn btn--primary" type="button">
+          <span class="btn-potion-sparkle" aria-hidden="true">✨</span>
+          <span class="btn-text" id="explain-btn-text">🔮 Explain this diff</span>
+          <span class="btn-potion-bubbles" aria-hidden="true">
+            <i class="bubble b1"></i>
+            <i class="bubble b2"></i>
+            <i class="bubble b3"></i>
+          </span>
+        </button>
+      </section>
+
+      <!-- ── Stats + File List ── -->
+      <section aria-label="Diff summary">
+        <div id="stats-bar" class="stats-bar" aria-live="polite"></div>
+        <div id="file-list" aria-live="polite"></div>
+      </section>
+
+      <!-- ── Diff Highlight / Annotated View ── -->
+      <section id="diff-section" class="diff-section" aria-label="Annotated diff view" hidden>
+        <h2 class="diff-section__header">🔎 Annotated Diff</h2>
+        <div id="diff-highlight-area"></div>
+      </section>
+
+      <div class="pumpkin-divider" aria-hidden="true">· · · 🎃 · · ·</div>
+
+      <!-- ── Results / Patch Trail ── -->
+      <section class="results-section" aria-label="Patch trail results" aria-live="polite">
+        <div id="patch-trail"></div>
+      </section>
+
+      <!-- ── Footer ── -->
+      <footer class="site-footer">
+        <p>🕸️ PR Phantom · Gemini cloud AI or local Ollama · Halloween Edition 🎃</p>
+      </footer>
+
+    </main>
+
+    <!-- ── Right Sidebar (Review Toolkit & Checklist) ── -->
+    <aside id="sidebar-right" class="app-sidebar sidebar-right" aria-label="Review Toolkit & Checklist">
+      <div class="sidebar-header">
+        <div class="sidebar-header__title">
+          <span class="sidebar-icon">🛠️</span>
+          <span>Review Toolkit</span>
+        </div>
+        <button id="close-right-sidebar-btn" class="sidebar-close-btn" type="button" title="Collapse Toolkit" aria-label="Collapse Toolkit">✕</button>
+      </div>
+
+      <div class="sidebar-scrollable">
+        <!-- Section: Risk Gauge -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span>🔮 Spooky Risk Gauge</span>
+          </div>
+          <div id="risk-gauge-card" class="risk-gauge-card">
+            <div class="risk-gauge-header">
+              <span id="risk-gauge-level" class="risk-level-badge risk-level--low">Low Risk</span>
+            </div>
+            <ul id="risk-gauge-reasons" class="risk-reasons-list">
+              <li>Paste a diff or select a preset to analyze review risk.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Section: Interactive Automated Checklist -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span title="Automated verification based on diff inspection">📋 Smart Review Checklist</span>
+            <div class="checklist-header-actions">
+              <button id="auto-scan-btn" class="sidebar-text-btn sidebar-text-btn--highlight" type="button" title="Scan diff automatically">⚡ Auto-Scan</button>
+              <button id="reset-checklist-btn" class="sidebar-text-btn" type="button" title="Reset all to manual">Reset</button>
+            </div>
+          </div>
+
+          <!-- Readiness Badge & Progress -->
+          <div class="checklist-readiness-card">
+            <div class="readiness-header">
+              <span class="readiness-title">Review Readiness</span>
+              <span id="readiness-badge" class="readiness-badge">Awaiting Diff</span>
+            </div>
+            <div class="checklist-progress-wrap">
+              <div class="checklist-progress-bar">
+                <div id="checklist-progress-fill" class="checklist-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="checklist-progress-text">
+                <span id="checklist-progress-label">0 / 8 verified (0%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="checklist-filter-pills" role="tablist" aria-label="Checklist filters">
+            <button class="filter-pill filter-pill--active" data-filter="all" type="button">All (<span id="count-all">8</span>)</button>
+            <button class="filter-pill" data-filter="passed" type="button">✅ Passed (<span id="count-passed">0</span>)</button>
+            <button class="filter-pill" data-filter="warning" type="button">⚠️ Flagged (<span id="count-warning">0</span>)</button>
+          </div>
+
+          <div id="checklist-items-container" class="checklist-items">
+            <!-- populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- Section: GitHub PR Comment Exporter -->
+        <div class="sidebar-section">
+          <div class="sidebar-section__title">
+            <span>🚀 GitHub PR Exporter</span>
+          </div>
+          <p class="sidebar-hint">Generate an executive review summary with key questions and checklist status formatted for PR comments.</p>
+          <div class="export-actions">
+            <button id="copy-pr-comment-btn" class="btn btn--export" type="button">
+              📋 Copy PR Comment
+            </button>
+            <button id="toggle-preview-btn" class="btn btn--ghost btn--small" type="button">
+              👁️ Preview
+            </button>
+          </div>
+          <div id="pr-export-preview" class="pr-export-preview" hidden>
+            <textarea id="pr-export-textarea" class="export-textarea" readonly rows="8" aria-label="Markdown preview of PR review comment"></textarea>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-notification" class="toast-notification" role="status" aria-live="polite"></div>
+
+  <!-- Ambient cemetery fog -->
+  <div class="cemetery-fog" aria-hidden="true"></div>
+
+  <script>
+    // Show/hide the annotated diff section when content is present
+    const diffHighlight = document.getElementById('diff-highlight-area');
+    const diffSection = document.getElementById('diff-section');
+    const observer = new MutationObserver(() => {
+      diffSection.hidden = !diffHighlight.hasChildNodes();
+    });
+    observer.observe(diffHighlight, { childList: true });
+  </script>
+
+</body>
+</html>
